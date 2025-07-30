@@ -5,17 +5,19 @@ module globals
   integer, public :: terminal=5
 
   integer, parameter :: N_cells = 5
-  integer, parameter :: n_hours = 1
+  integer, parameter :: n_days = 1
 
-  real(kind=rkind), dimension(:,:), allocatable :: &
-    dx, dy, precip, qinter, qout, conduct, G, Tmax, Tmin, Tmean, RHmax, &
-    RHmin, uz, soilcontent, actvapress, satvapress, wind, &
-    Rn, Rl, Rg, Ha, Ts, Ta
+   ! Arrays
+     real(kind=rkind), dimension(:,:), allocatable :: &
+       dx, dy, precip, qinter, qout, &
+       conduct, G, Tmax, Tmin, Tmean, &
+       RHmax, RHmin, uz, soilcontent
 
   real(kind=rkind), dimension(:,:), allocatable :: Qsurf_result, ET_flux, L_result, Qgw_result, deltas
 
-  integer :: CN, z
-  real(kind=rkind) :: sigma, ccrop
+   ! Scalars
+     integer :: CN, J
+    real(rkind) ::  phi, as, bs, z, alpha, sigma, gsc, ccrop
 
   integer :: t, cell
 
