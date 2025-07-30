@@ -705,7 +705,7 @@ module readtools
       
       !logical vars
       integer :: ierr, ierr2
-      integer(kind=ikind) :: i, j
+      integer(kind=ikind) :: k, s
       real, dimension(:), allocatable :: tmpdata
       logical :: ok
       logical :: terminate = .false. 
@@ -735,10 +735,10 @@ module readtools
       
       
       if (present(options)) then
-        do i=1, ubound(r,1)
+        do k=1, ubound(r,1)
           ok = .false.
-          optcheck: do j=1, ubound(options,1)
-            if (r(i) == options(j)) then 
+          optcheck: do s=1, ubound(options,1)
+            if (r(k) == options(s)) then
               ok = .true.
               EXIT optcheck
             end if
