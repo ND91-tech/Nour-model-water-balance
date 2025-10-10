@@ -5,7 +5,7 @@ FFLAGS = -fimplicit-none -g -fbounds-check  -Werror=line-truncation
 
 
 # List of all object files
-OBJS = typy.o globals.o initvals.o hydrofnc.o core_tools.o readtools.o debug_tools.o
+OBJS = typy.o globals.o initvals.o hydrofnc.o core_tools.o readtools.o debug_tools.o tools.o
 
 # Target to build the final executable
 all: $(OBJS) main.o
@@ -13,6 +13,9 @@ all: $(OBJS) main.o
 
 typy.o: typy.f90
 	$(FC) $(FFLAGS) -c typy.f90
+
+tools.o: typy.o globals.o tools.f90
+	$(FC) $(FFLAGS) -c tools.f90
 
 debug_tools.o: typy.o globals.o debug_tools.f90
 	$(FC) $(FFLAGS) -c debug_tools.f90
@@ -28,7 +31,7 @@ globals.o: typy.o globals.f90
 	$(FC) $(FFLAGS) -c globals.f90
 
 
-initvals.o: typy.o globals.o core_tools.o  initvals.f90
+initvals.o: typy.o globals.o core_tools.o debug_tools.o readtools.o initvals.f90
 	$(FC) $(FFLAGS) -c initvals.f90
 
 # Rules for building object files
