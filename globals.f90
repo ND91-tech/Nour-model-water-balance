@@ -32,6 +32,21 @@ module globals
     real(kind=rkind) :: value
   end type indata_str
 
+  type, public :: nodes_str
+    real(kind=rkind), dimension(:,:), allocatable :: data
+  end type nodes_str
+
+  type, public :: elements_str
+    integer(kind=ikind), dimension(:,:), allocatable :: data
+    integer(kind=ikind), dimension(:), allocatable :: material
+    real(kind=rkind), dimension(:), allocatable :: area
+  end type elements_str
+
+
+  type(nodes_str), allocatable :: nodes
+  type(elements_str), allocatable :: elements
+  
   type(indata_str), allocatable :: rainfall, temp_mean, temp_min, temp_max
+
 
 end module globals
