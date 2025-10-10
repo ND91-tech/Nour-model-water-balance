@@ -1,9 +1,40 @@
 module initvals
   use typy
-  use globals
+  use debug_tools
   implicit none
   contains
     subroutine init()
+      use readtools
+      use globals
+
+
+
+      integer :: filenodes, fileel 
+      integer(kind=ikind) :: n, i, tmp
+
+      open(newunit=filenodes, file='nodes.in.tsv', action="read", status="old")
+
+      open(newunit=fileel, file='elements.in.tsv', action="read", status="old")
+
+    
+
+      call fileread(n, filenodes)
+
+print *, n
+      allocate(nodes%data(n,2))
+      print *, "---"
+
+      do i=1,n
+        call comment(filenodes)
+        read(filenodes,*) tmp, nodes%data(i,:)
+      end do
+
+      call printmtx(nodes%data)
+
+      stop
+
+
+
       allocate(dx(N_cells, n_days), dy(N_cells, n_days), precip(N_cells, n_days), &
               qinter(N_cells, n_days), qout(N_cells, n_days), conduct(N_cells, n_days), &
               G(N_cells, n_days), Tmax(N_cells, n_days), Tmin(N_cells, n_days), &
@@ -12,6 +43,7 @@ module initvals
               Qsurf_result(N_cells, n_days), ET_flux(N_cells, n_days), &
               L_result(N_cells, n_days), Qgw_result(N_cells, n_days), deltas(N_cells, n_days))
 
+              
       dx = reshape([1.0_rkind, 5.0_rkind, 4.0_rkind, 6.0_rkind, 3.0_rkind], [N_cells, n_days])
       dy = reshape([6.0_rkind, 7.0_rkind, 10.0_rkind, 8.0_rkind, 3.0_rkind], [N_cells, n_days])
       precip = reshape([0.0_rkind, 0.0_rkind, 17.0_rkind, 12.0_rkind, 9.0_rkind], [N_cells, n_days])
