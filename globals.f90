@@ -2,51 +2,63 @@ module globals
   use typy
   implicit none
 
-  integer, public :: terminal=5
+  ! =====================================================
+  ! === Geometry Structures =============================
+  ! =====================================================
 
-  integer, parameter :: N_cells = 5
-  integer, parameter :: n_days = 1
-
-   ! Arrays
-     real(kind=rkind), dimension(:,:), allocatable :: &
-       dx, dy, precip, qinter, qout, &
-       conduct, G, Tmax, Tmin, Tmean, &
-       RHmax, RHmin, uz, soilcontent
-
-  real(kind=rkind), dimension(:,:), allocatable :: Qsurf_result, ET_flux, L_result, Qgw_result, deltas
-
-   ! Scalars
-     integer :: CN, J
-    real(rkind) ::  phi, as, bs, z, alpha, sigma, gsc, ccrop
-
-  integer :: t, cell
-
-  type, public :: date_str
-    integer :: month
-    integer :: day
-    integer :: year
-  end type date_str
-
-  type, public :: indata_str
-    type(date_str) :: date
-    real(kind=rkind) :: value
-  end type indata_str
-
-  type, public :: nodes_str
-    real(kind=rkind), dimension(:,:), allocatable :: data
+  !> Node coordinates and watershed mask
+  type :: nodes_str
+     real(kind=rkind), allocatable :: xy(:,:)          ! (n_nodes, 2)
+     logical, allocatable          :: watershed(:)     ! mask: inside watershed?
   end type nodes_str
 
-  type, public :: elements_str
-    integer(kind=ikind), dimension(:,:), allocatable :: data
-    integer(kind=ikind), dimension(:), allocatable :: material
-    real(kind=rkind), dimension(:), allocatable :: area
+
+  !> Hydrological balance per element
+  type, public :: hydrobal_str
+     real(kind=rkind) :: deltas  = 0.0_rkind   ! water balance residual
+     real(kind=rkind) :: inflow  = 0.0_rkind   ! inflow (from upstream)
+     real(kind=rkind) :: outflow = 0.0_rkind   ! outflow
+     real(kind=rkind) :: Li      = 0.0_rkind   ! leakage
+     real(kind=rkind) :: ET      = 0.0_rkind   ! evapotranspiration
+     real(kind=rkind) :: Qgw     = 0.0_rkind   ! groundwater flow
+     real(kind=rkind) :: Qsurf   = 0.0_rkind   ! surface runoff
+  end type hydrobal_str
+
+
+  !> Element properties and hydrological results
+  type :: elements_str
+     integer(kind=ikind), allocatable :: conn(:,:)     ! element-node connectivity
+     real(kind=rkind),    allocatable :: area(:)       ! area of each element
+     integer(kind=ikind), allocatable :: material(:)   ! material or soil ID
+     type(hydrobal_str),  allocatable :: hydrobal(:)   ! per-element hydro balance
+     integer :: n = 0                                  ! number of elements
   end type elements_str
 
 
-  type(nodes_str), allocatable :: nodes
-  type(elements_str), allocatable :: elements
-  
-  type(indata_str), allocatable :: rainfall, temp_mean, temp_min, temp_max
+  ! =====================================================
+  ! === Global Variables ================================
+  ! =====================================================
 
+  type(nodes_str)    :: nodes
+  type(elements_str) :: elements
+
+  ! --- Simulation parameters ---
+  integer, parameter :: n_days = 1
+  integer :: CN, J, t
+  real(kind=rkind) :: phi, as, bs, z, alpha, sigma, gsc, ccrop
+
+  ! =====================================================
+  ! === Hydrology input and result arrays (element-based)
+  ! =====================================================
+  ! Dimensions: (elements%n, n_days)
+  real(kind=rkind), allocatable :: precip(:,:), qinter(:,:), qout(:,:)
+  real(kind=rkind), allocatable :: conduct(:,:), G(:,:), Tmax(:,:), Tmin(:,:), Tmean(:,:)
+  real(kind=rkind), allocatable :: RHmax(:,:), RHmin(:,:), uz(:,:), soilcontent(:,:)
+
+  ! --- Computed results (legacy arrays kept for exporting/visualizing) ---
+  real(kind=rkind), allocatable :: Qsurf_result(:,:), ET_flux(:,:), &
+                                   L_result(:,:), Qgw_result(:,:), deltas(:,:)
+
+  integer, parameter :: terminal = 6
 
 end module globals
