@@ -1,56 +1,53 @@
-# Define the Fortran compiler and options
+# ====== Compiler and Flags ======
 FC = gfortran
 FFLAGS = -fimplicit-none -g -fbounds-check
-FFLAGS = -fimplicit-none -g -fbounds-check  -Werror=line-truncation
+FFLAGS += -Werror=line-truncation
 
+# ====== Object File List ======
+OBJS = typy.o globals.o core_tools.o debug_tools.o readtools.o tools.o initvals.o hydrofnc.o main.o
 
-# List of all object files
-OBJS = typy.o globals.o initvals.o hydrofnc.o core_tools.o readtools.o debug_tools.o tools.o
+# ====== Executable ======
+TARGET = nour_model
 
-# Target to build the final executable
-all: $(OBJS) main.o
-	$(FC) $(FFLAGS) -o testme main.o $(OBJS)
+# ====== Main build rule ======
+$(TARGET): $(OBJS)
+	@echo " Checking if $(TARGET).exe is running..."
+	@tasklist /FI "IMAGENAME eq $(TARGET).exe" 2>NUL | find /I "$(TARGET).exe" >NUL && ( \
+		echo "  $(TARGET).exe is currently running — killing it..." && \
+		taskkill /IM $(TARGET).exe /F >NUL ) || echo " No running instance found."
+	$(FC) $(FFLAGS) -o $(TARGET) $(OBJS)
+	@echo " Build successful: $(TARGET).exe ready."
 
+# ====== Compilation rules ======
 typy.o: typy.f90
 	$(FC) $(FFLAGS) -c typy.f90
-
-tools.o: typy.o globals.o tools.f90
-	$(FC) $(FFLAGS) -c tools.f90
-
-debug_tools.o: typy.o globals.o debug_tools.f90
-	$(FC) $(FFLAGS) -c debug_tools.f90
-
-core_tools.o: typy.o globals.o core_tools.f90
-	$(FC) $(FFLAGS) -c core_tools.f90
-
-readtools.o: typy.o debug_tools.o globals.o readtools.f90
-	$(FC) $(FFLAGS) -c  readtools.f90
-
 
 globals.o: typy.o globals.f90
 	$(FC) $(FFLAGS) -c globals.f90
 
+core_tools.o: typy.o globals.o core_tools.f90
+	$(FC) $(FFLAGS) -c core_tools.f90
 
-initvals.o: typy.o globals.o core_tools.o debug_tools.o readtools.o initvals.f90
+debug_tools.o: typy.o globals.o core_tools.o debug_tools.f90
+	$(FC) $(FFLAGS) -c debug_tools.f90
+
+readtools.o: typy.o globals.o debug_tools.o core_tools.o readtools.f90
+	$(FC) $(FFLAGS) -c readtools.f90
+
+tools.o: typy.o globals.o debug_tools.o core_tools.o tools.f90
+	$(FC) $(FFLAGS) -c tools.f90
+
+initvals.o: typy.o globals.o tools.o core_tools.o debug_tools.o initvals.f90
 	$(FC) $(FFLAGS) -c initvals.f90
 
-# Rules for building object files
-hydrofnc.o: globals.o typy.o hydrofnc.f90
+hydrofnc.o: typy.o globals.o tools.o core_tools.o debug_tools.o hydrofnc.f90
 	$(FC) $(FFLAGS) -c hydrofnc.f90
 
-
-main.o: $(OBJS) main.f90
+main.o: typy.o globals.o tools.o initvals.o hydrofnc.o main.f90
 	$(FC) $(FFLAGS) -c main.f90
 
-
-
-
-
-# Clean rule to remove compiled files
+# ====== Clean rule ======
 clean:
-	rm *.o *.mod
-
-tar:
-	tar -czf nour-`date -I`.tgz *.f90 makefile
-
-
+	@echo " Cleaning build files..."
+	-del /Q *.o *.mod $(TARGET).exe 2>nul || true
+	@echo " Clean complete."

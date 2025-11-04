@@ -23,6 +23,8 @@ module readtools
   public :: fileread
   private :: read_int, read_int_std, read_int_array, read_real,  read_real_array, read_char, read_char_array
   public :: comment, reverse_comment
+!  public :: readbcvals
+!  public :: set_tensor
   public :: read_sep
 
 
@@ -696,7 +698,7 @@ module readtools
     
     subroutine read_char_array(r, fileid, options, errmsg, noexit)
       use typy
-      use globals
+!      use globals
       character(len=*), dimension(:), intent(out) :: r
       integer, intent(in) :: fileid
       character(len=*), dimension(:), optional :: options
@@ -705,7 +707,7 @@ module readtools
       
       !logical vars
       integer :: ierr, ierr2
-      integer(kind=ikind) :: k, s
+      integer(kind=ikind) :: i, j
       real, dimension(:), allocatable :: tmpdata
       logical :: ok
       logical :: terminate = .false. 
@@ -735,10 +737,10 @@ module readtools
       
       
       if (present(options)) then
-        do k=1, ubound(r,1)
+        do i=1, ubound(r,1)
           ok = .false.
-          optcheck: do s=1, ubound(options,1)
-            if (r(k) == options(s)) then
+          optcheck: do j=1, ubound(options,1)
+            if (r(i) == options(j)) then 
               ok = .true.
               EXIT optcheck
             end if
@@ -1000,8 +1002,224 @@ module readtools
       
 
 
+!    !> this procedure set up an anisothropy tensor, the local anisothrophy values are supllied in values array, angle is the angle between the local and global system, tensor is the resulting secodn order tensor
+!    subroutine set_tensor(values, angle, tensor)
+!      use typy
+!      use globals
+!      use global_objs
+!      use globals1D
+!      use debug_tools
+!      use core_tools
+
+!      !>local anisothoropy values with respect to local x, local y and local z
+!      real(kind=rkind), dimension(:), intent(in) :: values
+!      !> angle between the local and global system of coordinates
+!      real(kind=rkind), dimension(:), intent(in) :: angle
+!      !> resulting second order tensor with respect to the global system of coordinates
+!      real(kind=rkind), dimension(:,:), intent(out) :: tensor
+!      real(kind=rkind), dimension(:,:), allocatable :: T
+!      integer(kind=ikind) :: i,j
 
 
+!      allocate(T(drutes_config%dimen, drutes_config%dimen))
+
+
+!      select case(drutes_config%dimen)
+!        case(1)
+!          tensor(1,1) = values(1)
+!          angle_1D = angle(1)
+!          RETURN
+!        case(2)
+
+!          T(1,1) = cos(4.0_dprec*atan(1.0_dprec)/180.0_rkind*angle(1))
+!          T(1,2) = cos(4.0_dprec*atan(1.0_dprec)/180.0_rkind*(90-angle(1)))
+!          T(2,1) = cos(4.0_dprec*atan(1.0_dprec)/180.0_rkind*(90+angle(1)))
+!          T(2,2) = cos(4.0_dprec*atan(1.0_dprec)/180.0_rkind*(angle(1)))
+
+!        case(3)
+!          call write_log("tensors not implemented in 3D, using isotropic setup")
+!          T = 0
+!          do i=1,3
+!            T(i,i) = 1
+!          end do
+!      end select            
+
+!      tensor = 0
+!      do i=1, ubound(tensor,1)
+!        tensor(i,i) = values(i)
+!      end do
+
+!      tensor = matmul(matmul(T, tensor), transpose(T))
+      
+!!       call printmtx(tensor) ; stop
+
+!      deallocate(T)
+
+!    end subroutine  set_tensor
+
+
+!    subroutine readbcvals(unitW, struct, dimen, dirname)
+!      use typy
+!      use globals
+!      use global_objs
+!      use pde_objs
+!      use core_tools
+!      use debug_tools
+
+
+!      integer, intent(in) :: unitW
+!      type(boundary_vals), dimension(:), allocatable, intent(out) :: struct
+!      integer(kind=ikind), intent(in) :: dimen
+!      !> directory name, where data with boundary condition are stored
+!      character(len=*), intent(in) :: dirname
+!      integer(kind=ikind) :: i, j, n
+!      character(len=3) :: ch
+!      character(len=1) :: y_file, y_cond
+!      integer :: ierr, fileid
+!      integer(kind=ikind) :: counter, counter2
+!      character(len=256) :: filename
+!      real(kind=rkind) :: tmp
+!      character(len=1024) :: msg
+!      real(kind=rkind), dimension(:), allocatable :: tester
+      
+      
+!      if (.not. allocated(struct)) then
+!        allocate(struct(101:101+dimen-1))
+!      else
+!	     print *, "W: strange bc struct already allocated with bounds:", lbound(struct,1), ":", ubound(struct,1)
+!      end if
+      
+!      if (maxval(nodes%edge) /= ubound(struct,1)) then
+!       inquire(unit=unitW, name=filename)
+!        if (maxval(nodes%edge)-100 - dimen == ubound(measured_pts,1) ) then
+!          write(unit=msg, fmt="(a)") "There is an inconsistent boundary description, it seems like you have forgot & 
+!               to include the points with measurement into boundary definition"
+!        else if (maxval(nodes%edge) < 100) then
+!          write(unit=msg, fmt=*) "Your mesh does not define any boundaries, you are completely wrong!!"
+!        else 			!a,I3,a,I3,a,I3,a,I3,a,I3,a
+!          write(unit=msg, fmt="(a,I3,a,I3,a,I3,a,a,a,I3,a)")  "There is an inconsistent boundary description, &
+!                        the mesh configuration defines "& 
+!          , maxval(nodes%edge)-100 - ubound(measured_pts,1) , " boundary(ies), your measurement points define an extra", &
+!          ubound(measured_pts,1), " boundary(ies), thus in total you need:", &
+!          maxval(nodes%edge)-100, " boundary(ies), however the input model file: ", &
+!          trim(filename), " defines ", dimen, " boundary(ies)."
+
+!        end if
+!        call file_error(unitW, trim(msg))
+!      end if
+
+
+!      do i = lbound(struct,1), ubound(struct,1)
+!        call comment(unitW)
+!        read(unit=unitW, fmt=*, iostat=ierr) struct(i)%ID, struct(i)%code, y_file, struct(i)%value
+
+!        select case(y_file)
+!          case("y")
+!            struct(i)%file = .true.
+!          case("n")
+!            struct(i)%file = .false.
+!          case default
+!            call file_error(unitW, &
+!            "set [y/n] value for file in boundary condition description, see file info bellow")
+!        end select
+
+!        if (ierr /= 0) then
+!          inquire(unit=unitW, name=filename)
+!          write(unit=msg, fmt=*) "HINT: check number of boundary records in file: ", trim(filename)
+!          call file_error(unitW, trim(msg))
+!        end if
+
+!        if (struct(i)%file) then
+!          call find_unit(fileid)
+!          !write(unit=filename, fmt="(a, I3, a)") trim(dirname), i, ".bc"
+!          write(unit=filename, fmt="(a, I3, a)") trim(dirname), struct(i)%ID, ".bc"
+!          open(unit=fileid, file=adjustl(trim(filename)), action="read", status="old",  iostat=ierr)
+!          if (ierr /= 0) then
+!            write(unit=msg, fmt=*) "ERROR: if using unsteady boundary value data, you must supply the file with data!", &
+!            "ERROR: file required:", trim(filename)
+!            call file_error(unitW, msg)
+!          end if
+!          counter = 0
+!          do 
+!            counter = counter + 1
+!            call comment(fileid)
+!            read(unit=fileid, fmt=*, iostat=ierr) tmp
+!            if (ierr /= 0) then
+!              EXIT
+!            end if
+!          end do
+
+          
+!          close(fileid)
+
+!          counter = counter - 1
+          
+!          tmp=-1.0
+          
+!          counter2=0
+          
+!          n=2
+!          do 
+!            open(unit=fileid, file=trim(filename), action="read", status="old",  iostat=ierr)
+!            if (.not. allocated(tester)) then
+!              allocate(tester(n))
+!            else
+!              deallocate(tester)
+!              allocate(tester(n))
+!            end if
+             
+!            tester = sqrt(tmp)
+!            call comment(fileid)
+!            read(unit=fileid, fmt=*, iostat=ierr) tester
+!            if (isnan(tester(ubound(tester,1))) ) then
+!              close(fileid)
+!              EXIT
+!            else
+!              deallocate(tester)
+!              n=n*2
+!              close(fileid)
+!            end if
+!          end do
+           
+!          open(unit=fileid, file=trim(filename), action="read", status="old",  iostat=ierr)
+   
+          
+          
+!          do j=1, ubound(tester,1)
+!            if (isnan(tester(j))) then
+!              EXIT
+!            else
+!              counter2=counter2+1
+!            end if
+!          end do
+          
+!          allocate(struct(i)%series(counter,counter2/counter))
+
+!          do j=1, counter
+!            call comment(fileid)
+!            read(unit=fileid, fmt=*, iostat=ierr) struct(i)%series(j,:)
+!            if (ierr /= 0) then
+!              write(unit=msg, fmt="(a,a,a,i4)") "incorrect data in file:  ", trim(filename), "    at line:", j
+!              call file_error(fileid, msg)
+!            end if
+
+!          end do
+
+!          struct(i)%series_pos = 1
+       
+!          if (struct(i)%series(counter,1) < end_time) then
+!            call file_error(fileid, &
+!            "ERROR: end time in unsteady boundary data must be equal or higher than the simulation end time" )
+!          end if
+
+
+!          close(fileid)
+!        end if
+
+!      end do
+
+!    end subroutine readbcvals
+    
     
  
      

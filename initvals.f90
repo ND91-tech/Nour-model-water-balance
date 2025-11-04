@@ -1,92 +1,96 @@
 module initvals
   use typy
-  use debug_tools
+  use globals
   implicit none
-  contains
-    subroutine init()
-      use readtools
-      use globals
+contains
+
+  subroutine init()
+    integer :: i
+
+    ! =====================================================
+    ! === Allocate hydrological arrays ====================
+    ! =====================================================
+    allocate( precip(elements%n, n_days), qinter(elements%n, n_days), qout(elements%n, n_days), &
+          conduct(elements%n, n_days), G(elements%n, n_days), Tmax(elements%n, n_days), &
+          Tmin(elements%n, n_days), Tmean(elements%n, n_days), RHmax(elements%n, n_days), &
+          RHmin(elements%n, n_days), uz(elements%n, n_days), soilcontent(elements%n, n_days), &
+          Qsurf_result(elements%n, n_days), ET_flux(elements%n, n_days), L_result(elements%n, n_days), &
+          Qgw_result(elements%n, n_days), deltas(elements%n, n_days) )
 
 
 
-      integer :: filenodes, fileel 
-      integer(kind=ikind) :: n, i, tmp
-
-      open(newunit=filenodes, file='nodes.in.tsv', action="read", status="old")
-
-      open(newunit=fileel, file='elements.in.tsv', action="read", status="old")
-
-    
-
-      call fileread(n, filenodes)
-
-print *, n
-      allocate(nodes%data(n,2))
-      print *, "---"
-
-      do i=1,n
-        call comment(filenodes)
-        read(filenodes,*) tmp, nodes%data(i,:)
-      end do
-
-      call printmtx(nodes%data)
-
-      stop
+    ! =====================================================
+    ! === Allocate & initialize element-level hydrology ====
+    ! =====================================================
+if (elements%n > 0) then
+   if (.not. allocated(elements%hydrobal)) then
+      allocate(elements%hydrobal(elements%n))
+   end if
+   do i = 1, elements%n
+      elements%hydrobal(i)%inflow  = 0.0_rkind
+      elements%hydrobal(i)%outflow = 0.0_rkind
+      elements%hydrobal(i)%Li      = 0.0_rkind
+      elements%hydrobal(i)%ET      = 0.0_rkind
+      elements%hydrobal(i)%Qgw     = 0.0_rkind
+      elements%hydrobal(i)%Qsurf   = 0.0_rkind
+      elements%hydrobal(i)%deltas  = 0.0_rkind
+   end do
+end if
 
 
-
-      allocate(dx(N_cells, n_days), dy(N_cells, n_days), precip(N_cells, n_days), &
-              qinter(N_cells, n_days), qout(N_cells, n_days), conduct(N_cells, n_days), &
-              G(N_cells, n_days), Tmax(N_cells, n_days), Tmin(N_cells, n_days), &
-              Tmean(N_cells, n_days), RHmax(N_cells, n_days), RHmin(N_cells, n_days), &
-              uz(N_cells, n_days), soilcontent(N_cells, n_days), &
-              Qsurf_result(N_cells, n_days), ET_flux(N_cells, n_days), &
-              L_result(N_cells, n_days), Qgw_result(N_cells, n_days), deltas(N_cells, n_days))
-
-              
-      dx = reshape([1.0_rkind, 5.0_rkind, 4.0_rkind, 6.0_rkind, 3.0_rkind], [N_cells, n_days])
-      dy = reshape([6.0_rkind, 7.0_rkind, 10.0_rkind, 8.0_rkind, 3.0_rkind], [N_cells, n_days])
-      precip = reshape([0.0_rkind, 0.0_rkind, 17.0_rkind, 12.0_rkind, 9.0_rkind], [N_cells, n_days])
-      qinter = reshape([0.958_rkind, 0.67_rkind, 0.858_rkind, 0.985_rkind, 0.534_rkind], [N_cells, n_days])
-      qout = reshape([0.1_rkind, 0.24_rkind, 0.12_rkind, 0.09_rkind, 0.15_rkind], [N_cells, n_days])
-      conduct = reshape([0.014_rkind, 0.05_rkind, 0.034_rkind, 0.022_rkind, 0.012_rkind], [N_cells, n_days])
+    ! =====================================================
+    ! === Example meteorological inputs ===================
+    ! =====================================================
+       precip = reshape([0.0_rkind, 0.0_rkind, 17.0_rkind, 12.0_rkind, 9.0_rkind, 7.0_rkind, &
+      40.0_rkind, 0.0_rkind, 0.0_rkind, 3.0_rkind], [elements%n, n_days])
+      
+      qinter = reshape([0.0_rkind, 0.0_rkind, 0.015_rkind, 0.018_rkind, 0.02_rkind, 0.022_rkind, &
+      0.025_rkind, 0.0235_rkind, 0.03_rkind, 0.031_rkind], [elements%n, n_days])
+  
+      qout = reshape([3.3_rkind, 3.3_rkind, 3.3_rkind, 3.3_rkind, 3.3_rkind, 3.3_rkind, &
+      3.3_rkind, 3.3_rkind, 3.3_rkind, 3.3_rkind], [elements%n, n_days])
+      
+      conduct = 0.000005_rkind
+      
       G = 0.0_rkind
-      uz = reshape([10.0_rkind, 11.0_rkind, 9.0_rkind, 3.4_rkind, 2.5_rkind], [N_cells, n_days])
-      Tmax = reshape([10.2_rkind, 8.8_rkind, 9.7_rkind, 14.2_rkind, 14.1_rkind], [N_cells, n_days])
-      Tmin = reshape([5.4_rkind, 2.4_rkind, 7.6_rkind, 10.4_rkind, 11.1_rkind], [N_cells, n_days])
-      Tmean = reshape([7.8_rkind, 5.6_rkind, 8.65_rkind, 12.3_rkind, 12.6_rkind], [N_cells, n_days])
-      RHmax = reshape([40.1_rkind, 45.5_rkind, 30.4_rkind, 33.5_rkind, 36.2_rkind], [N_cells, n_days])
-      RHmin = reshape([35.2_rkind, 40.2_rkind, 27.8_rkind, 35.7_rkind, 32.4_rkind], [N_cells, n_days])
-      soilcontent = reshape([0.05_rkind, 0.07_rkind, 0.2_rkind, 0.25_rkind, 0.3_rkind], [N_cells, n_days])
+      uz = reshape([4.38_rkind, 3.57_rkind, 4.026_rkind, 3.097_rkind, 4.14_rkind, &
+      3.13_rkind, 3.92_rkind, 3.19_rkind, 3.98_rkind, 3.34_rkind], &
+      [elements%n, n_days])
+      
+      Tmax = reshape([19.1_rkind, 15.3_rkind, 12.8_rkind, 11.8_rkind, 10.5_rkind, 15.2_rkind, &
+      11.6_rkind, 14.6_rkind, 17.2_rkind, 16.4_rkind], &
+      [elements%n, n_days])
+      
+      Tmin = reshape([5.4_rkind, 6.8_rkind, 8.8_rkind, 7.6_rkind, 8.4_rkind, 8.3_rkind, &
+      8.8_rkind, 6.2_rkind, 4.8_rkind, 6.2_rkind],[elements%n, n_days])
+      
+      Tmean = reshape([12.25_rkind, 11.05_rkind, 10.8_rkind, 9.7_rkind, 9.45_rkind, 11.75_rkind, &
+      10.2_rkind, 10.4_rkind, 11.0_rkind, 9.7_rkind],[elements%n, n_days])
+      
+      RHmax = reshape([84.0_rkind, 85.0_rkind, 76.0_rkind, 87.0_rkind, 92.0_rkind, &
+      94.0_rkind, 97.0_rkind, 92.0_rkind, 93.0_rkind, 97.0_rkind], &
+     [elements%n, n_days])
+      
+      RHmin = reshape([56.0_rkind, 64.0_rkind, 64.0_rkind, 77.0_rkind, 77.0_rkind, 76.0_rkind, &
+      74.0_rkind, 59.0_rkind, 62.0_rkind, 61.0_rkind], [elements%n, n_days])
+      
+      soilcontent = reshape([0.05_rkind, 0.055_rkind, 0.062_rkind, 0.06_rkind, 0.04_rkind, 0.07_rkind, &
+      0.09_rkind, 0.2_rkind, 0.25_rkind, 0.265_rkind], [elements%n, n_days])
 
-      ! Initialize scalars
-        CN = 98
-        z = 3_rkind
-        J = 172      ! Roughly corresponds to June 21 (summer solstice)
-        phi = 0.872_rkind
-        as = 0.25_rkind
-        bs = 0.05_rkind
-        alpha = 0.23_rkind
-        sigma = 4.903e-5_rkind
-        gsc = 0.0820_rkind
-        ccrop = 0.8_rkind
+    ! =====================================================
+    ! === Hydrological constants ==========================
+    ! =====================================================
+    CN     = 98
+    z      = 3.0_rkind
+    J      = 172
+    phi    = 0.872_rkind
+    as     = 0.25_rkind
+    bs     = 0.05_rkind
+    alpha  = 0.23_rkind
+    sigma  = 4.903e-5_rkind
+    gsc    = 0.0820_rkind
+    ccrop  = 0.8_rkind
 
-    end subroutine init
+  end subroutine init
 
-    subroutine data_reader(meteodata, filename)
-      use typy
-      use core_tools
-      use globals
-
-      type(indata_str), dimension(:), allocatable, intent(out) :: meteodata
-      character(len=*), intent(in) :: filename
-
-      integer :: fileid, ierr
-
-      open(newunit=fileid, file=cut(filename), action="read", status="replace", iostat=ierr)
-
-
-
-    end subroutine data_reader
 end module initvals
-

@@ -22,13 +22,9 @@
 
 
 module debug_tools
-  use globals
   private :: print_real_matrix, print_int_matrix, print_real_vector, print_int_vector, print_real_vector4
   public :: wait, print_filename
-
-
-
-!   private :: print_quadpnt
+!  private :: print_quadpnt
   
   !> generic procedure, can be overloaded with different vector/matrix types
   interface printmtx
@@ -37,14 +33,14 @@ module debug_tools
     module procedure print_real_vector
     module procedure print_char_vector
     module procedure print_int_vector
-!     module procedure print_sparse_matrix
-!     module procedure print_smartmatrix_i
-!     module procedure print_smartarray_i
-!     module procedure print_smartmatrix_r
-!     module procedure print_smartarray_r
+!    module procedure print_sparse_matrix
+!    module procedure print_smartmatrix_i
+!    module procedure print_smartarray_i
+!    module procedure print_smartmatrix_r
+!    module procedure print_smartarray_r
     module procedure print_logical_array
     module procedure print_real_vector4
-!     module procedure print_quadpnt
+!    module procedure print_quadpnt
   end interface printmtx
  
 
@@ -71,11 +67,213 @@ module debug_tools
       
     end function print_filename
 
+!    !> prints integpnt_str
+!    subroutine print_quadpnt(quadpnt, filunit, name)
+!      use global_objs
+!      use core_tools
+!      use globals
+      
+!      type(integpnt_str), intent(in) :: quadpnt
+!      integer, intent(in), optional :: filunit
+!      character(len=*), intent(in), optional :: name
+      
+!      integer :: filloc
+!      integer :: ierr
+!      logical :: op   
+      
+!      if (present(name)) then
+!        call find_unit(filloc)
+!        open(unit=filloc, file=name, action="write", status="replace", iostat=ierr)
+!        if (ierr /= 0) then
+!          print *, "unable to open dump file, called from debug_tools::printmtx"
+!          error stop
+!        end if
+!      else if (present(filunit)) then
+!        filloc = filunit
+!        inquire(unit=filloc, opened=op)
+!        if (.not. op) then
+!          print *, "file not opened, called from debug_tools::printmtx"
+!          error stop
+!        end if
+!      else
+!        filloc = terminal
+!      end if
+      
+      
+!      write(unit=filloc, fmt=*) "type:", quadpnt%type_pnt
+      
+!      if (quadpnt%type_pnt == "ndpt" .or. quadpnt%type_pnt == "obpt") then
+!        write(unit=filloc, fmt=*) "order of point:", quadpnt%order
+!      end if
+      
+!      if (quadpnt%type_pnt == "gqnd") then
+!        write(unit=filloc, fmt=*) "order of element:", quadpnt%element
+!      end if
+      
+!      if (quadpnt%type_pnt == "xypt") then
+!        write(unit=filloc, fmt=*) "coordinates:", quadpnt%xy
+!      end if
+      
+!      write(unit=filloc, fmt=*) "column:", quadpnt%column
+      
+!      write(unit=filloc, fmt=*) "element:", quadpnt%element
+      
+!      if (quadpnt%ddlocal) then
+!        write(unit=filloc, fmt=*) "using subdomain local data"
+!        write(unit=filloc, fmt=*) "subdomain id", quadpnt%subdom
+!        if (quadpnt%extended) then
+!          write(unit=filloc, fmt=*) "node from extended subdomain (see subcycling man)"
+!        else
+!        write(unit=filloc, fmt=*) "node inside the subdomain"
+!        end if
+!      else
+!        write(unit=filloc, fmt=*) "using global data"
+!      end if
+      
+!      if (.not. quadpnt%globtime) then
+!        write(unit=filloc, fmt=*) "not using the global time, solution will be interpolated"
+!        write(unit=filloc, fmt=*) "time 4 use:", quadpnt%time4eval
+!      else
+!        write(unit=filloc, fmt=*) "using the global time"
+!      end if
+      
+  
+!      if (terminal /= filloc) then
+!        close(filloc)
+!      else
+!        call flush(terminal)
+!      end if
+      
+!    end subroutine print_quadpnt
+  
+!    !> prints sparse matrix  
+!    subroutine print_sparse_matrix(A, filunit, name)
+!      use sparsematrix
+!      use mtxiotools
+!      use globals
+!      use core_tools
+!      class(smtx), intent(in out) :: A
+!      integer, intent(in), optional :: filunit
+!      character(len=*), intent(in), optional :: name
 
+!      integer :: filloc
+!      integer :: ierr
+!      logical :: op
+    
+!      if (present(name)) then
+!        print *, "cdswav"
+!        call a%write(name)
+!        return
+!      end if
+      
+
+!      call a%print()
+
+!      if (terminal /= filloc) then
+!        close(filloc)
+!      else
+!        call flush(terminal)
+!      end if
+
+!    end subroutine print_sparse_matrix
+
+    !> prints dense matrix of reals
+    subroutine print_real_matrix(a, filunit, name)
+      use typy
+      use globals
+      use core_tools
+
+      real(kind=rkind), dimension(:,:), intent(in out) :: a
+      integer, intent(in), optional :: filunit     
+      character(len=*), intent(in), optional :: name
+
+      integer :: filloc
+      integer :: ierr
+      logical :: op
+      integer(kind=ikind) :: i
+      
+      if (present(name)) then
+        call find_unit(filloc)
+        open(unit=filloc, file=name, action="write", status="replace", iostat=ierr)
+        if (ierr /= 0) then
+          print *, "unable to open dump file, called from debug_tools::printmtx"
+          error stop
+        end if
+      else if (present(filunit)) then
+        filloc = filunit
+        inquire(unit=filloc, opened=op)
+        if (.not. op) then
+          print *, "file not opened, called from debug_tools::printmtx"
+          error stop
+        end if
+      else
+        filloc = terminal
+      end if
+      
+      
+      do i=lbound(a,1), ubound(a,1)
+        write(unit=filloc, fmt=*)  i, "|",  a(i,:)
+      end do
+
+      if (terminal /= filloc) then
+        close(filloc)
+      else
+        call flush(terminal)
+      end if
+      
+    end subroutine print_real_matrix
+
+    !> prints dense matrix of integers
+    subroutine print_int_matrix(a, filunit, name)
+      use typy
+      use globals
+      use core_tools
+      
+      integer(kind=ikind), dimension(:,:), intent(in) :: a
+      integer, intent(in), optional :: filunit   
+      character(len=*), intent(in), optional :: name
+
+      integer :: filloc
+      integer :: ierr
+      logical :: op
+      integer(kind=ikind) :: i
+      
+      if (present(name)) then
+        call find_unit(filloc)
+        open(unit=filloc, file=name, action="write", status="replace", iostat=ierr)
+        if (ierr /= 0) then
+          print *, "unable to open dump file, called from debug_tools::printmtx"
+          error stop
+        end if
+      else if (present(filunit)) then
+        filloc = filunit
+        inquire(unit=filloc, opened=op)
+        if (.not. op) then
+          print *, "file not opened, called from debug_tools::printmtx"
+          error stop
+        end if
+      else
+        filloc = terminal
+      end if
+      
+      
+      do i=lbound(a,1), ubound(a,1)
+        write(unit=filloc, fmt=*)  i, "|",  a(i,:)
+      end do
+
+      if (terminal /= filloc) then
+        close(filloc)
+      else
+        call flush(terminal)
+      end if
+      
+    end subroutine print_int_matrix
     
         !> prints vector of characters
     subroutine print_char_vector(V, filunit, name)
       use typy
+      use globals
+      use core_tools
       
       !parametry
       character(len=*), dimension(:), intent(in) :: V  !<vektor k tisknuti
@@ -88,7 +286,8 @@ module debug_tools
       integer(kind=ikind) :: i
       
       if (present(name)) then
-        open(newunit=filloc, file=name, action="write", status="replace", iostat=ierr)
+        call find_unit(filloc)
+        open(unit=filloc, file=name, action="write", status="replace", iostat=ierr)
         if (ierr /= 0) then
           print *, "unable to open dump file, called from debug_tools::printmtx"
           error stop
@@ -122,7 +321,8 @@ module debug_tools
     subroutine print_real_vector(V, filunit, name)
     ! vytiskne vektor, pocet sloupcu tisku je nc
       use typy
-
+      use globals
+      use core_tools
       
       !parametry
       real(kind=rkind), dimension(:), intent(in) :: V  !<vektor k tisknuti
@@ -135,7 +335,8 @@ module debug_tools
       integer(kind=ikind) :: i
       
       if (present(name)) then
-        open(newunit=filloc, file=name, action="write", status="replace", iostat=ierr)
+        call find_unit(filloc)
+        open(unit=filloc, file=name, action="write", status="replace", iostat=ierr)
         if (ierr /= 0) then
           print *, "unable to open dump file, called from debug_tools::printmtx"
           error stop
@@ -168,6 +369,8 @@ module debug_tools
         !> prints vector of single reals
     subroutine print_real_vector4(V, filunit, name)
       use typy
+      use globals
+      use core_tools
       
       !parametry
       real(4), dimension(:), intent(in) :: V  !<vektor k tisknuti
@@ -180,7 +383,8 @@ module debug_tools
       integer(kind=ikind) :: i
       
       if (present(name)) then
-        open(newunit=filloc, file=name, action="write", status="replace", iostat=ierr)
+        call find_unit(filloc)
+        open(unit=filloc, file=name, action="write", status="replace", iostat=ierr)
         if (ierr /= 0) then
           print *, "unable to open dump file, called from debug_tools::printmtx"
           error stop
@@ -213,7 +417,8 @@ module debug_tools
     subroutine print_int_vector(V, filunit, name)
     ! vytiskne vektor, pocet sloupcu tisku je nc
       use typy
-
+      use globals
+      use core_tools
       
       !parametry
       integer(kind=ikind), dimension(:), intent(in) :: V  !<vektor k tisknuti
@@ -226,7 +431,8 @@ module debug_tools
       integer(kind=ikind) :: i
       
       if (present(name)) then
-        open(newunit=filloc, file=name, action="write", status="replace", iostat=ierr)
+        call find_unit(filloc)
+        open(unit=filloc, file=name, action="write", status="replace", iostat=ierr)
         if (ierr /= 0) then
           print *, "unable to open dump file, called from debug_tools::printmtx"
           error stop
@@ -256,104 +462,197 @@ module debug_tools
     end subroutine print_int_vector
     
     
-    !> prints dense matrix of reals
-    subroutine print_real_matrix(a, filunit, name)
-      use typy
+!    !> prints smartarray vector of smartarray vectors of integers
+!    subroutine print_smartmatrix_i(array, filunit, name)
+!      use typy
+!      use globals
+!      use core_tools
+      
+!      !parametry
+!      class(smartarray_int), dimension(:), intent(in) :: array  !<vektor k tisknuti
+!      integer, intent(in), optional :: filunit   
+!      character(len=*), intent(in), optional :: name
 
-
-      real(kind=rkind), dimension(:,:), intent(in out) :: a
-      integer, intent(in), optional :: filunit
-      character(len=*), intent(in), optional :: name
-
-      integer :: filloc
-      integer :: ierr
-      logical :: op
-      integer(kind=ikind) :: i
-
-      if (present(name)) then
-        open(newunit=filloc, file=name, action="write", status="replace", iostat=ierr)
-        if (ierr /= 0) then
-          print *, "unable to open dump file, called from debug_tools::printmtx"
-          error stop
-        end if
-      else if (present(filunit)) then
-        filloc = filunit
-        inquire(unit=filloc, opened=op)
-        if (.not. op) then
-          print *, "file not opened, called from debug_tools::printmtx"
-          error stop
-        end if
-      else
-        filloc = terminal
-      end if
-
-
-      do i=lbound(a,1), ubound(a,1)
-        write(unit=filloc, fmt=*)  i, "|",  a(i,:)
-      end do
-
-      if (terminal /= filloc) then
-        close(filloc)
-      else
-        call flush(terminal)
-      end if
-
-    end subroutine print_real_matrix
-
-    !> prints dense matrix of integers
-    subroutine print_int_matrix(a, filunit, name)
-      use typy
-
-
-      integer(kind=ikind), dimension(:,:), intent(in) :: a
-      integer, intent(in), optional :: filunit
-      character(len=*), intent(in), optional :: name
-
-      integer :: filloc
-      integer :: ierr
-      logical :: op
-      integer(kind=ikind) :: i
-
-      if (present(name)) then
-        open(newunit=filloc, file=name, action="write", status="replace", iostat=ierr)
-        if (ierr /= 0) then
-          print *, "unable to open dump file, called from debug_tools::printmtx"
-          error stop
-        end if
-      else if (present(filunit)) then
-        filloc = filunit
-        inquire(unit=filloc, opened=op)
-        if (.not. op) then
-          print *, "file not opened, called from debug_tools::printmtx"
-          error stop
-        end if
-      else
-        filloc = terminal
-      end if
-
-
-      do i=lbound(a,1), ubound(a,1)
-        write(unit=filloc, fmt=*)  i, "|",  a(i,:)
-      end do
-
-      if (terminal /= filloc) then
-        close(filloc)
-      else
-        call flush(terminal)
-      end if
-
-    end subroutine print_int_matrix
+!      integer :: filloc
+!      integer :: ierr
+!      logical :: op
+!      integer(kind=ikind) :: i
+      
+!      if (present(name)) then
+!        call find_unit(filloc)
+!        open(unit=filloc, file=name, action="write", status="replace", iostat=ierr)
+!        if (ierr /= 0) then
+!          print *, "unable to open dump file, called from debug_tools::printmtx"
+!          error stop
+!        end if
+!      else if (present(filunit)) then
+!        filloc = filunit
+!        inquire(unit=filloc, opened=op)
+!        if (.not. op) then
+!          print *, "file not opened, called from debug_tools::printmtx"
+!          error stop
+!        end if
+!      else
+!        filloc = terminal
+!      end if
+            
+!      do i=lbound(array,1),ubound(array,1)
+!        if (.not. allocated(array(i)%data)) then
+!          print *, "no values to print at row:", i
+!        else
+!          write(unit=filloc, fmt=*) i, "|", array(i)%data(1:array(i)%pos)
+!          write(unit=filloc, fmt=*) "-----------------------------------------------"
+!        end if
+!      end do
+      
+!      call flush(filloc)
+      
+!    end subroutine print_smartmatrix_i
 
     
-    
+!    !> prints smartarray vector of integers
+!    subroutine print_smartarray_i(array, filunit, name)
+!      use typy
+!      use globals
+!      use core_tools
+      
+!      !parametry
+!      class(smartarray_int), intent(in) :: array  !<vektor k tisknuti
+!      integer, intent(in), optional :: filunit   
+!      character(len=*), intent(in), optional :: name
 
+!      integer :: filloc
+!      integer :: ierr
+!      logical :: op
+!      integer(kind=ikind) :: i
+      
+!      if (present(name)) then
+!        call find_unit(filloc)
+!        open(unit=filloc, file=name, action="write", status="replace", iostat=ierr)
+!        if (ierr /= 0) then
+!          print *, "unable to open dump file, called from debug_tools::printmtx"
+!          error stop
+!        end if
+!      else if (present(filunit)) then
+!        filloc = filunit
+!        inquire(unit=filloc, opened=op)
+!        if (.not. op) then
+!          print *, "file not opened, called from debug_tools::printmtx"
+!          error stop
+!        end if
+!      else
+!        filloc = terminal
+!      end if
+      
+!      do i=1, array%pos
+!        write(unit=filloc, fmt=*)  i, "|", array%data(i)
+!      end do
+
+      
+!      call flush(filloc)
+      
+!    end subroutine print_smartarray_i
+    
+    
+    
+!        !> prints smartarray vector of smartarray vectors of integers
+!    subroutine print_smartmatrix_r(array, filunit, name)
+!      use typy
+!      use globals
+!      use core_tools
+      
+!      !parametry
+!      class(smartarray_real), dimension(:), intent(in) :: array  !<vektor k tisknuti
+!      integer, intent(in), optional :: filunit   
+!      character(len=*), intent(in), optional :: name
+
+!      integer :: filloc
+!      integer :: ierr
+!      logical :: op
+!      integer(kind=ikind) :: i
+      
+!      if (present(name)) then
+!        call find_unit(filloc)
+!        open(unit=filloc, file=name, action="write", status="replace", iostat=ierr)
+!        if (ierr /= 0) then
+!          print *, "unable to open dump file, called from debug_tools::printmtx"
+!          error stop
+!        end if
+!      else if (present(filunit)) then
+!        filloc = filunit
+!        inquire(unit=filloc, opened=op)
+!        if (.not. op) then
+!          print *, "file not opened, called from debug_tools::printmtx"
+!          error stop
+!        end if
+!      else
+!        filloc = terminal
+!      end if
+            
+!      do i=lbound(array,1),ubound(array,1)
+!        if (.not. allocated(array(i)%data)) then
+!          print *, "no values to print at row:", i
+!        else
+!          write(unit=filloc, fmt=*) i, "|", array(i)%data(1:array(i)%pos)
+!          write(unit=filloc, fmt=*) "-----------------------------------------------"
+!        end if
+!      end do
+      
+!      call flush(filloc)
+      
+!    end subroutine print_smartmatrix_r
+
+    
+!    !> prints smartarray vector of integers
+!    subroutine print_smartarray_r(array, filunit, name)
+!      use typy
+!      use globals
+!      use core_tools
+      
+!      !parametry
+!      class(smartarray_real), intent(in) :: array  !<vektor k tisknuti
+!      integer, intent(in), optional :: filunit   
+!      character(len=*), intent(in), optional :: name
+
+!      integer :: filloc
+!      integer :: ierr
+!      logical :: op
+!      integer(kind=ikind) :: i
+      
+!      if (present(name)) then
+!        call find_unit(filloc)
+!        open(unit=filloc, file=name, action="write", status="replace", iostat=ierr)
+!        if (ierr /= 0) then
+!          print *, "unable to open dump file, called from debug_tools::printmtx"
+!          error stop
+!        end if
+!      else if (present(filunit)) then
+!        filloc = filunit
+!        inquire(unit=filloc, opened=op)
+!        if (.not. op) then
+!          print *, "file not opened, called from debug_tools::printmtx"
+!          error stop
+!        end if
+!      else
+!        filloc = terminal
+!      end if
+      
+!      do i=1, array%pos
+!        write(unit=filloc, fmt=*)  i, "|", array%data(i)
+!      end do
+
+      
+!      call flush(filloc)
+      
+!    end subroutine print_smartarray_r
     
     
     
     !> prints vector of logicals
     subroutine print_logical_array(array, filunit, name)
       use typy
-
+      use globals
+      use core_tools
       
       !parametry
       logical, dimension(:), intent(in) :: array  !<vektor k tisknuti
@@ -366,7 +665,8 @@ module debug_tools
       integer(kind=ikind) :: i
       
       if (present(name)) then
-        open(newunit=filloc, file=name, action="write", status="replace", iostat=ierr)
+        call find_unit(filloc)
+        open(unit=filloc, file=name, action="write", status="replace", iostat=ierr)
         if (ierr /= 0) then
           print *, "unable to open dump file, called from debug_tools::printmtx"
           error stop
