@@ -53,7 +53,7 @@ program nour
   print *, "-----------------------------------------------"
   print *, " Element |     P     ET   Qsurf    Li     Qgw    Qin   Qout    deltaS"
   do i = 1, elements%n
-     print '(I7, 8F8.3)', i, precip(i,1), elements%hydrobal(i)%ET, &
+     print '(I7, 8F12.6)', i, precip(i,1), elements%hydrobal(i)%ET, &
             elements%hydrobal(i)%Qsurf, elements%hydrobal(i)%Li, &
             elements%hydrobal(i)%Qgw, elements%hydrobal(i)%inflow, &
             elements%hydrobal(i)%outflow, elements%hydrobal(i)%deltas
