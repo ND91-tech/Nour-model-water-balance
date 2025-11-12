@@ -10,6 +10,7 @@ module globals
   type :: nodes_str
      real(kind=rkind), allocatable :: xy(:,:)          ! (n_nodes, 2)
      logical, allocatable          :: watershed(:)     ! mask: inside watershed?
+     integer(kind=ikind)           :: kolik
   end type nodes_str
 
 
@@ -31,7 +32,8 @@ module globals
      real(kind=rkind),    allocatable :: area(:)       ! area of each element
      integer(kind=ikind), allocatable :: material(:)   ! material or soil ID
      type(hydrobal_str),  allocatable :: hydrobal(:)   ! per-element hydro balance
-     integer :: n = 0                                  ! number of elements
+     integer(kind=ikind)              :: kolik = 0     ! number of elements
+     integer(kind=ikind), dimension(:,:), allocatable :: neighbours
   end type elements_str
 
 
@@ -43,7 +45,7 @@ module globals
   type(elements_str) :: elements
 
   ! --- Simulation parameters ---
-  integer, parameter :: n_days = 1
+  integer(kind=ikind), parameter :: n_days = 1
   integer :: CN, J, t
   real(kind=rkind) :: phi, as, bs, z, alpha, sigma, gsc, ccrop
 

@@ -33,7 +33,7 @@ program nour
 
   print *, "-----------------------------------------------"
   print *, " Element Areas"
-  do i = 1, elements%n
+  do i = 1, elements%kolik
      print '(I4, F12.3)', i, elements%area(i)
   end do
 
@@ -52,7 +52,7 @@ program nour
   ! =====================================================
   print *, "-----------------------------------------------"
   print *, " Element |     P     ET   Qsurf    Li     Qgw    Qin   Qout    deltaS"
-  do i = 1, elements%n
+  do i = 1, elements%kolik
      print '(I7, 8F12.6)', i, precip(i,1), elements%hydrobal(i)%ET, &
             elements%hydrobal(i)%Qsurf, elements%hydrobal(i)%Li, &
             elements%hydrobal(i)%Qgw, elements%hydrobal(i)%inflow, &

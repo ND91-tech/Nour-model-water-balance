@@ -140,7 +140,7 @@ contains
     integer :: el, t
     real(rkind) :: inflow, outflow
 
-    do el = 1, elements%n
+    do el = 1, elements%kolik
        do t = 1, n_days
 
           ! --- Step 1: compute fluxes for this element and day

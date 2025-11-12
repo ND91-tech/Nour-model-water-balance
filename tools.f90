@@ -30,6 +30,7 @@ contains
        if (len_trim(line) > 0 .and. line(1:1) /= "#") exit
     end do
     read(line,*) n_nodes
+    nodes%kolik = n_nodes
     allocate(nodes%xy(n_nodes,2))
     i = 0
     do while (i < n_nodes)
@@ -50,8 +51,8 @@ contains
        if (len_trim(line) > 0 .and. line(1:1) /= "#") exit
     end do
     read(line,*) n_elem
+    elements%kolik = n_elem
     allocate(elements%conn(n_elem,3), elements%area(n_elem))
-    elements%n = n_elem
 
     i = 0
     do while (i < n_elem)
@@ -89,7 +90,7 @@ contains
     real(kind=rkind) :: total_area
     total_area = 0.0_rkind
 
-    do i = 1, elements%n
+    do i = 1, elements%kolik
        n1 = elements%conn(i,1)
        n2 = elements%conn(i,2)
        n3 = elements%conn(i,3)
@@ -123,7 +124,7 @@ contains
 
     print *, "-----------------------------------------------"
     print *, "Elem |    P     ET   Qsurf   Li    Qgw   Qin   Qout   ΔS"
-    do i = 1, elements%n
+    do i = 1, elements%kolik
        write(*,'(I4,8F8.3)') i, &
             precip(i,1), elements%hydrobal(i)%ET, elements%hydrobal(i)%Qsurf, &
             elements%hydrobal(i)%Li, elements%hydrobal(i)%Qgw, &
@@ -147,7 +148,7 @@ contains
 
     open(newunit=unit, file=filename, status="replace", action="write")
     write(unit,'(A)') "Element,P,ET,Qsurf,Li,Qgw,Qin,Qout,DeltaS"
-    do i = 1, elements%n
+    do i = 1, elements%kolik
        write(unit,'(I4,8(",",F10.3))') i, precip(i,1), &
             elements%hydrobal(i)%ET, elements%hydrobal(i)%Qsurf, &
             elements%hydrobal(i)%Li, elements%hydrobal(i)%Qgw, &
