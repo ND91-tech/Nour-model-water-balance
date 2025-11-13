@@ -141,23 +141,23 @@ contains
     real(rkind) :: inflow, outflow
 
     do el = 1, elements%kolik
-       do t = 1, n_days
+       do time_step = 1, n_days
 
           ! --- Step 1: compute fluxes for this element and day
-          elements%hydrobal(el)%ET    = penman_monteith(el,t) * ccrop
-          elements%hydrobal(el)%Qsurf = surface_runoff(el,t)
-          elements%hydrobal(el)%Li    = leakage(el,t)
-          elements%hydrobal(el)%Qgw   = ground_water(el,t)
+          elements%hydrobal(el)%ET    = penman_monteith(el,time_step) * ccrop
+          elements%hydrobal(el)%Qsurf = surface_runoff(el,time_step)
+          elements%hydrobal(el)%Li    = leakage(el,time_step)
+          elements%hydrobal(el)%Qgw   = ground_water(el,time_step)
 
           ! --- Placeholder routing terms (can be replaced with network logic)
-          inflow  = qinter(el,t)
-          outflow = qout(el,t)
+          inflow  = qinter(el,time_step)
+          outflow = qout(el,time_step)
 
           elements%hydrobal(el)%inflow  = inflow
           elements%hydrobal(el)%outflow = outflow
 
           ! --- Step 2: mass balance for the element
-          elements%hydrobal(el)%deltas = precip(el,t) + inflow - &
+          elements%hydrobal(el)%deltas = precip(el,time_step) + inflow - &
                                          ( elements%hydrobal(el)%ET      + &
                                            outflow                       + &
                                            elements%hydrobal(el)%Qsurf   + &
@@ -165,11 +165,11 @@ contains
                                            elements%hydrobal(el)%Qgw     )
 
           ! --- Step 3: keep arrays in sync (legacy arrays)
-          ET_flux(el,t)      = elements%hydrobal(el)%ET
-          Qsurf_result(el,t) = elements%hydrobal(el)%Qsurf
-          L_result(el,t)     = elements%hydrobal(el)%Li
-          Qgw_result(el,t)   = elements%hydrobal(el)%Qgw
-          deltas(el,t)       = elements%hydrobal(el)%deltas
+          ET_flux(el,time_step)      = elements%hydrobal(el)%ET
+          Qsurf_result(el,time_step) = elements%hydrobal(el)%Qsurf
+          L_result(el,time_step)     = elements%hydrobal(el)%Li
+          Qgw_result(el,time_step)   = elements%hydrobal(el)%Qgw
+          deltas(el,time_step)       = elements%hydrobal(el)%deltas
 
        end do
     end do
