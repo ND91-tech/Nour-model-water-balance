@@ -79,7 +79,7 @@ contains
 
     u2 = wind2m(uz(element,day), z)
 
-    Ra = Ra_daily(phi, J)
+    Ra = Ra_daily(phi, Julian_day)
 
     ! actual/possible sunshine ratio
     nN = 1._rkind
