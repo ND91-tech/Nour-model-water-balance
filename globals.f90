@@ -2,6 +2,10 @@ module globals
   use typy
   implicit none
 
+  ! Time/progress variables (GLOBAL)
+  real(kind=rkind) :: tmp, tmp1, sim_time, start_time, end_time, time
+  logical          :: www
+
   ! =====================================================
   ! === Geometry Structures =============================
   ! =====================================================
@@ -12,7 +16,6 @@ module globals
      logical, allocatable          :: watershed(:)     ! mask: inside watershed?
      integer(kind=ikind)           :: kolik
   end type nodes_str
-
 
   !> Hydrological balance per element
   type, public :: hydrobal_str
@@ -25,7 +28,6 @@ module globals
      real(kind=rkind) :: Qsurf   = 0.0_rkind   ! surface runoff
   end type hydrobal_str
 
-
   !> Element properties and hydrological results
   type :: elements_str
      integer(kind=ikind), allocatable :: conn(:,:)     ! element-node connectivity
@@ -36,7 +38,6 @@ module globals
      integer(kind=ikind), dimension(:,:), allocatable :: neighbours
   end type elements_str
 
-
   ! =====================================================
   ! === Global Variables ================================
   ! =====================================================
@@ -46,7 +47,7 @@ module globals
 
   ! --- Simulation parameters ---
   integer(kind=ikind), parameter :: n_days = 1
-  integer :: CN, J, t
+  integer :: CN, Julian_day , time_step
   real(kind=rkind) :: phi, as, bs, z, alpha, sigma, gsc, ccrop
 
   ! =====================================================
