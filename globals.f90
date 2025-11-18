@@ -15,6 +15,7 @@ module globals
      real(kind=rkind), allocatable :: data(:,:)          ! (n_nodes, 2)
      logical, allocatable          :: watershed(:)     ! mask: inside watershed?
      integer(kind=ikind)           :: kolik
+     real(kind=rkind), dimension(:), allocatable :: altitude
   end type nodes_str
 
   !> Hydrological balance per element
@@ -36,6 +37,8 @@ module globals
      type(hydrobal_str),  allocatable :: hydrobal(:)   ! per-element hydro balance
      integer(kind=ikind)              :: kolik = 0     ! number of elements
      integer(kind=ikind), dimension(:,:), allocatable :: neighbours
+     real(kind=rkind), dimension(:), allocatable :: avgalt
+     real(kind=rkind), dimension(:), allocatable :: overflow
   end type elements_str
 
   ! =====================================================
