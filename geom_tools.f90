@@ -15,7 +15,6 @@ module geom_tools
       integer(kind=ikind) :: i,j,k,l,m,upward,downward,pos, n, o
       
       el%neighbours = 0_ikind
-      
 
       !set neighbours
       do i=1, el%kolik

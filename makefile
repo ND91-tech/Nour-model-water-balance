@@ -4,7 +4,7 @@ FFLAGS = -fimplicit-none -g -fbounds-check
 FFLAGS += -Werror=line-truncation
 
 # ====== Object File List ======
-OBJS = typy.o globals.o core_tools.o debug_tools.o readtools.o tools.o initvals.o hydrofnc.o printtools.o  # geom_tools.o
+OBJS = typy.o globals.o core_tools.o debug_tools.o readtools.o tools.o initvals.o hydrofnc.o printtools.o  geom_tools.o
 
 # ====== Executable ======
 TARGET = nour_model
@@ -33,6 +33,9 @@ core_tools.o: typy.o globals.o core_tools.f90
 
 debug_tools.o: typy.o globals.o core_tools.o debug_tools.f90
 	$(FC) $(FFLAGS) -c debug_tools.f90
+
+geom_tools.o: typy.o globals.o debug_tools.f90 geom_tools.f90
+	$(FC) $(FFLAGS) -c geom_tools.f90
 
 readtools.o: typy.o globals.o debug_tools.o core_tools.o readtools.f90
 	$(FC) $(FFLAGS) -c readtools.f90
