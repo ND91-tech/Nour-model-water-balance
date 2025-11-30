@@ -31,7 +31,7 @@ contains
     end do
     read(line,*) n_nodes
     nodes%kolik = n_nodes
-    allocate(nodes%xy(n_nodes,2))
+    allocate(nodes%data(n_nodes,2))
     i = 0
     do while (i < n_nodes)
        read(unit,'(A)',iostat=ios) line
@@ -39,8 +39,8 @@ contains
        if (len_trim(line) == 0 .or. line(1:1) == "#") cycle
        read(line,*) id, x, y
        i = i + 1
-       nodes%xy(i,1) = x
-       nodes%xy(i,2) = y
+       nodes%data(i,1) = x
+       nodes%data(i,2) = y
     end do
     print *, "Read", i, "nodes."
 
@@ -52,7 +52,7 @@ contains
     end do
     read(line,*) n_elem
     elements%kolik = n_elem
-    allocate(elements%conn(n_elem,3), elements%area(n_elem))
+    allocate(elements%data(n_elem,3), elements%area(n_elem))
 
     i = 0
     do while (i < n_elem)
@@ -61,7 +61,7 @@ contains
        if (len_trim(line) == 0 .or. line(1:1) == "#") cycle
        read(line,*) id, n1, n2, n3
        i = i + 1
-       elements%conn(i,:) = [n1, n2, n3]
+       elements%data(i,:) = [n1, n2, n3]
     end do
     print *, " Read", i, "triangular elements."
     close(unit)
@@ -91,12 +91,12 @@ contains
     total_area = 0.0_rkind
 
     do i = 1, elements%kolik
-       n1 = elements%conn(i,1)
-       n2 = elements%conn(i,2)
-       n3 = elements%conn(i,3)
-       a = nodes%xy(n1,:)
-       b = nodes%xy(n2,:)
-       c = nodes%xy(n3,:)
+       n1 = elements%data(i,1)
+       n2 = elements%data(i,2)
+       n3 = elements%data(i,3)
+       a = nodes%data(n1,:)
+       b = nodes%data(n2,:)
+       c = nodes%data(n3,:)
        elements%area(i) = area_triangle(a,b,c)
        total_area = total_area + elements%area(i)
     end do

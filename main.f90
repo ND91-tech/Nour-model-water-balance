@@ -4,11 +4,14 @@ program nour
   use initvals
   use hydrofnc
   use tools
+  use geom_tools
   implicit none
 
   integer :: i
   character(len=256) :: mesh_file_name
   logical :: file_exists
+
+
 
   ! =====================================================
   ! === Step 0: File check ===============================
@@ -27,8 +30,8 @@ program nour
 
   print *, "-----------------------------------------------"
   print *, " Node Coordinates"
-  do i = 1, ubound(nodes%xy,1)
-     print '(I4, 2F10.3)', i, nodes%xy(i,1), nodes%xy(i,2)
+  do i = 1, ubound(nodes%data,1)
+     print '(I4, 2F10.3)', i, nodes%data(i,1), nodes%data(i,2)
   end do
 
   print *, "-----------------------------------------------"
