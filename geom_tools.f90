@@ -1,73 +1,52 @@
-
+! geom_tools.f90
 module geom_tools
-  contains
-  
-    subroutine find_neighbours(el, nd)
-      use typy
-      use globals
-      use printtools
-      use core_tools
-      use debug_tools
+  use typy
+  use globals
+  implicit none
+contains
 
-      type(elements_str), intent(in out) :: el
-      type(nodes_str), intent(in) :: nd
-      
-      integer(kind=ikind) :: i,j,k,l,m,upward,downward,pos, n, o
-      
-      el%neighbours = 0_ikind
+  ! -----------------------------------------------------
+  ! Find neighbours: elements that share an edge
+  ! -----------------------------------------------------
+  subroutine find_neighbours(elements, nodes)
+    type(elements_str), intent(inout) :: elements
+    type(nodes_str),    intent(in)    :: nodes
+    integer(kind=ikind) :: nel
+    integer(kind=ikind) :: i, j, k, shared
+    integer(kind=ikind) :: e1(3), e2(3)
 
-      !set neighbours
-      do i=1, el%kolik
-        pos = 0
-        j = i
-        k = i
+    nel = elements%kolik
+    if (nel <= 0) return
 
-        call progressbar(int(100*i/el%kolik))
+    if (.not. allocated(elements%neighbours)) then
+       allocate(elements%neighbours(nel,3))
+    end if
+    elements%neighbours = 0_ikind
 
-        okoli: do 
-          j = min(j+1, el%kolik+1)
-          k = max(k-1, 0_ikind)
+    do i = 1, nel
+       e1 = elements%data(i,:)
+       do j = 1, nel
+          if (i == j) cycle
+          e2 = elements%data(j,:)
 
-          if (j <= el%kolik) then
-            upward = 0
-            moje1: do l=1,ubound(el%data,2)
-                nasel1: do m=1,ubound(el%data,2)
-                  if (el%data(i,l) == el%data(j,m) .and. i/=j) then
-                    upward = upward + 1
-                    if (upward == drutes_config%dimen) then 
-                pos = pos + 1
-                el%neighbours(i,pos) = j
-                EXIT nasel1
-                    end if
-                  end if
-              end do nasel1
-            end do moje1
+          ! count shared nodes between element i and j
+          shared = 0
+          do k = 1, 3
+             if (any(e2 == e1(k))) shared = shared + 1
+          end do
+
+          ! share at least 2 nodes => share an edge => neighbour
+          if (shared >= 2) then
+             ! put j into next free neighbour slot of i
+             do k = 1, 3
+                if (elements%neighbours(i,k) == 0) then
+                   elements%neighbours(i,k) = j
+                   exit
+                end if
+             end do
           end if
-
-          if (k > 0) then
-            downward = 0
-            moje2: do l=1,ubound(el%data,2)
-              nasel2: do m=1,ubound(el%data,2)
-                  if (el%data(i,l) == el%data(k,m) .and. i /= k) then
-                    downward = downward + 1
-                    if (downward == drutes_config%dimen) then 
-                pos = pos + 1
-                el%neighbours(i,pos) = k
-                EXIT nasel2
-                    end if
-                  end if
-              end do nasel2 
-            end do moje2
-          end if
-
-          if (pos == ubound(el%data,2) .or. (j == el%kolik+1 .and. k == 0_ikind)) then
-            EXIT okoli
-          end if
-        end do okoli
-      end do
-            
-
-
-    end subroutine find_neighbours
+       end do
+    end do
+  end subroutine find_neighbours
 
 end module geom_tools
