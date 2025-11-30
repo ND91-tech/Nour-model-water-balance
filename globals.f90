@@ -1,112 +1,89 @@
+! globals.f90
 module globals
   use typy
   implicit none
 
-  ! Time/progress variables (GLOBAL)
+  ! Time/progress helpers
   real(kind=rkind) :: tmp, tmp1, sim_time, start_time, end_time, time
   logical          :: www
 
-  ! =====================================================
-  ! === Geometry Structures =============================
-  ! =====================================================
-
-  !> Node coordinates and watershed mask
+  ! ---------- Node structure ----------
   type :: nodes_str
-     real(kind=rkind), allocatable :: data(:,:)          ! (n_nodes, 2)
-     logical, allocatable          :: watershed(:)     ! mask: inside watershed?
-     integer(kind=ikind)           :: kolik
-     real(kind=rkind), dimension(:), allocatable :: altitude
+     real(kind=rkind), allocatable :: data(:,:)     ! (n_nodes,2): x,y
+     logical,       allocatable    :: watershed(:)  ! mask if needed
+     integer(kind=ikind)           :: kolik = 0
+     real(kind=rkind), allocatable :: altitude(:)   ! elevation z
   end type nodes_str
 
-  !> Hydrological balance per element
+  ! ---------- Hydrological balance (per element, per step) ----------
   type, public :: hydrobal_str
-     real(kind=rkind) :: deltas  = 0.0_rkind   ! water balance residual
-     real(kind=rkind) :: inflow  = 0.0_rkind   ! inflow (from upstream)
-     real(kind=rkind) :: outflow = 0.0_rkind   ! outflow
-     real(kind=rkind) :: Li      = 0.0_rkind   ! leakage
-     real(kind=rkind) :: ET      = 0.0_rkind   ! evapotranspiration
-     real(kind=rkind) :: Qgw     = 0.0_rkind   ! groundwater flow
-     real(kind=rkind) :: Qsurf   = 0.0_rkind   ! surface runoff
+     real(kind=rkind) :: deltas  = 0.0_rkind
+     real(kind=rkind) :: inflow  = 0.0_rkind
+     real(kind=rkind) :: outflow = 0.0_rkind
+     real(kind=rkind) :: Li      = 0.0_rkind
+     real(kind=rkind) :: ET      = 0.0_rkind
+     real(kind=rkind) :: Qgw     = 0.0_rkind
+     real(kind=rkind) :: Qsurf   = 0.0_rkind
   end type hydrobal_str
 
-  !> Element properties and hydrological results
+  ! ---------- Element structure ----------
   type :: elements_str
-     integer(kind=ikind), allocatable :: data(:,:)     ! element-node connectivity
-     real(kind=rkind),    allocatable :: area(:)       ! area of each element
-     integer(kind=ikind), allocatable :: material(:)   ! material or soil ID
-     type(hydrobal_str),  allocatable :: hydrobal(:)   ! per-element hydro balance
-     integer(kind=ikind)              :: kolik = 0     ! number of elements
-     integer(kind=ikind), dimension(:,:), allocatable :: neighbours
-     real(kind=rkind), dimension(:), allocatable :: avgalt
-     real(kind=rkind), dimension(:), allocatable :: overflow
+     integer(kind=ikind), allocatable :: data(:,:)      ! connectivity (nel,3)
+     real(kind=rkind),    allocatable :: area(:)        ! element area
+     integer(kind=ikind), allocatable :: material(:)    ! optional soil ID
+     type(hydrobal_str),  allocatable :: hydrobal(:)    ! hydro state
+     integer(kind=ikind)              :: kolik = 0      ! number of elements
+     integer(kind=ikind), allocatable :: neighbours(:,:)! (nel,max_neigh)
+     real(kind=rkind),    allocatable :: avgalt(:)      ! mean elevation
+     real(kind=rkind),    allocatable :: overflow(:)    ! local generated overflow
   end type elements_str
-
-  ! =====================================================
-  ! === Global Variables ================================
-  ! =====================================================
 
   type(nodes_str)    :: nodes
   type(elements_str) :: elements
 
-  ! --- Simulation parameters ---
+  ! Simulation time discretisation
   integer(kind=ikind), parameter :: n_days = 1
-  integer :: CN, Julian_day , time_step
+  integer(kind=ikind) :: CN, Julian_day , time_step
   real(kind=rkind) :: phi, as, bs, z, alpha, sigma, gsc, ccrop
 
-  ! =====================================================
-  ! === Hydrology input and result arrays (element-based)
-  ! =====================================================
-  ! Dimensions: (elements%n, n_days)
+  ! Element-based hydro inputs & outputs (time series)
   real(kind=rkind), allocatable :: precip(:,:), qinter(:,:), qout(:,:)
   real(kind=rkind), allocatable :: conduct(:,:), G(:,:), Tmax(:,:), Tmin(:,:), Tmean(:,:)
   real(kind=rkind), allocatable :: RHmax(:,:), RHmin(:,:), uz(:,:), soilcontent(:,:)
 
-  ! --- Computed results (legacy arrays kept for exporting/visualizing) ---
   real(kind=rkind), allocatable :: Qsurf_result(:,:), ET_flux(:,:), &
                                    L_result(:,:), Qgw_result(:,:), deltas(:,:)
 
   integer, parameter :: terminal = 6
 
-    !>structure with basic model configuration
+  ! ---------- Configuration structure (kept from DRUtES style) ----------
   type, public :: configuration
-    !> run dual yes or no
     character(len=1)    :: run_dual
-    !> use damped newton for the modified pickard iteration y/n
     character(len=1)    :: damped_newton
-    !> problem dimension 1 = 1D / 2 = 2D / 3 = 3D
-    integer(1) :: dimen = 2
-    !> mesh_type = 1 internal mesh generator (simple)
-    !! mesh_type = 2 t3d mesh generator
-    !< mesh type = 3 gmsh mesh generator
+    integer(1)          :: dimen = 2
     integer(kind=ikind) :: mesh_type
-    !> adapt time step to the observation time, or calculate the values of the observation time by linear approximation
-    logical    :: adapt_observe
-    !> parameter to decide if the code execution begins in some old backup
-    logical    :: run_from_backup
-    !> evaluate constitutive functions from table created at program init or directly?
-    !! 0 - for direct evaluation
-    !! 1 - to tabelarize the values and linearly approximate values between
-    !<
+    logical             :: adapt_observe
+    logical             :: run_from_backup
     integer(kind=ikind) :: fnc_method
-    !> length of interval in between the values in function table
     real(kind=rkind)    :: fnc_discr_length
-    !>nonlinear iteration method
-    !!0 - standard Picard method
-    !! 1 - Schwarz-Picard method (dd-adaptivity)
-    !!2 - no iterations
-    !<
     integer(kind=ikind) :: it_method
-    !> descriptor of the problem type (REstdH = standard Richards equation in total hydraulic head form
-    character(len=256) :: name
-    !> full name of the partial differential equation problem -- e.g. dual permeability Richards equation in total hydraulic head form
+    character(len=256)  :: name
     character(len=4096) :: fullname
-    !> if .true. then DRUtES solves rotational symmetric flow
-    logical :: rotsym=.false.
-    !> if .true. then DRUtES checks for integral mass balance errors, requires more computational power
-    logical :: check4mass=.false.
+    logical             :: rotsym = .false.
+    logical             :: check4mass = .false.
   end type configuration
 
-  !> program configuration
   type(configuration), public :: drutes_config
+
+  ! ---------- New routing / storage globals ----------
+  real(kind=rkind), allocatable :: storage(:)    ! [mm] surface/depression storage
+  real(kind=rkind), allocatable :: capacity(:)   ! [mm] max local storage capacity
+  real(kind=rkind), allocatable :: outlet_Q(:)   ! [mm] outlet discharge per time step
+
+  integer(kind=ikind), allocatable :: downstream(:) ! downstream element ID (0 = outlet)
+  integer(kind=ikind), allocatable :: flow_order(:) ! processing order (upstream→downstream)
+
+  ! Number of time steps (set in initvals)
+  integer(kind=ikind) :: nsteps = 0
 
 end module globals
