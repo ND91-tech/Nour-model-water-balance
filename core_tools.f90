@@ -287,7 +287,8 @@ module core_tools
     use typy
     real(kind=rkind) :: value
     
-    value = 4_ikind*atan(1.0_rkind)
+    value = 4.0_rkind * atan(1.0_rkind)
+
   end function pi
   
   
