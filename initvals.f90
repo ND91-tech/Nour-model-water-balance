@@ -67,7 +67,7 @@ allocate( deltas(elements%kolik, n_days) )
                       40.0_rkind, 0.0_rkind, 0.0_rkind, 3.0_rkind], [elements%kolik, n_days])
 
     qinter = reshape([0.0_rkind, 0.0_rkind, 0.015_rkind, 0.018_rkind, 0.02_rkind, 0.022_rkind, &
-                      0.025_rkin00d, 0.0235_rkind, 0.03_rkind, 0.031_rkind], [elements%kolik, n_days])
+                      0.025_rkind, 0.0235_rkind, 0.03_rkind, 0.031_rkind], [elements%kolik, n_days])
 
     qout = 0.0_rkind   ! no prescribed outflow, routing computes it
 
