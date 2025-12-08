@@ -67,18 +67,21 @@ program nour
   end do
 
   ! ----------------------------------------------------
-   ! 3) Initialize hydrological inputs and parameters
+   ! 4) Initialize hydrological inputs and parameters
   !     (from your initvals module)
   call init_hydro()   ! <-- new name
 
+    
+  call print_upstream_flows()
+
 
   ! ----------------------------------------------------
-  ! 4) Compute hydrological balance + routing
+  ! 5) Compute hydrological balance + routing
   ! ----------------------------------------------------
   call compute_all()
 
   ! ----------------------------------------------------
-  ! 5) Print and export results
+  ! 6) Print and export results
   ! ----------------------------------------------------
   print *, "--------------------------------------------------------------------------------------------------------------"
   print *, " Element |     P        ET      Qsurf       Li       Qgw      Qin     Surplus " // &
