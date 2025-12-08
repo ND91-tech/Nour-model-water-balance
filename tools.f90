@@ -149,7 +149,7 @@ contains
   ! Initialise flow topology: neighbours, avgalt, downstream, order
   ! -----------------------------------------------------
   subroutine init_flow_topology()
-    integer(kind=ikind) :: nel, i
+    integer(kind=ikind) :: nel
 
     nel = elements%kolik
     if (nel <= 0_ikind) return
@@ -157,13 +157,11 @@ contains
     ! Neighbour table
     call find_neighbours(elements, nodes)
 
-  
-
     ! Average elevation already computed by compute_avgalt()
 
     ! Allocate downstream + flow order
-    if (.not. allocated(downstream)) allocate(downstream(nel))
-    if (.not. allocated(flow_order)) allocate(flow_order(nel))
+    if (.not. allocated(downstream))  allocate(downstream(nel))
+    if (.not. allocated(flow_order))  allocate(flow_order(nel))
 
     elements%overflow = 0.0_rkind
     downstream        = 0_ikind
@@ -171,7 +169,11 @@ contains
 
     call build_downstream_graph()
     call build_flow_order()
+
+    ! NEW: build upstream lists
+    call build_upstream_graph()
   end subroutine init_flow_topology
+  
 
   ! -----------------------------------------------------
   ! Downstream element = neighbour with lowest avgalt
@@ -232,6 +234,107 @@ contains
 
     deallocate(idx, z)
   end subroutine build_flow_order
+
+
+    ! -----------------------------------------------------
+  ! Build upstream lists from downstream(:)
+  ! upstream_count(j)  = how many elements flow into j
+  ! upstream_list(j,k) = k-th upstream element of j
+  ! -----------------------------------------------------
+  subroutine build_upstream_graph()
+    use typy
+    use globals
+    implicit none
+
+    integer(kind=ikind) :: nel, i, j, max_up
+
+    nel = elements%kolik
+    if (nel <= 0_ikind) return
+
+    !--- pass 1: count how many upstream elements each cell has
+    if (allocated(upstream_count)) deallocate(upstream_count)
+    allocate(upstream_count(nel))
+    upstream_count = 0_ikind
+
+    do i = 1_ikind, nel
+       j = downstream(i)
+       if (j > 0_ikind) then
+          upstream_count(j) = upstream_count(j) + 1_ikind
+       end if
+    end do
+
+    ! maximum number of direct upstream contributors
+    max_up = 0_ikind
+    do i = 1_ikind, nel
+       if (upstream_count(i) > max_up) max_up = upstream_count(i)
+    end do
+
+    !--- pass 2: allocate and fill upstream_list(:,:)
+    if (allocated(upstream_list)) deallocate(upstream_list)
+    if (max_up > 0_ikind) then
+       allocate(upstream_list(nel, max_up))
+       upstream_list = 0_ikind
+
+       ! reuse upstream_count as a position counter
+       upstream_count = 0_ikind
+
+       do i = 1_ikind, nel
+          j = downstream(i)
+          if (j > 0_ikind) then
+             upstream_count(j) = upstream_count(j) + 1_ikind
+             upstream_list(j, upstream_count(j)) = i
+          end if
+       end do
+    else
+       ! no upstream connections at all (e.g. single-element mesh)
+       if (allocated(upstream_list)) deallocate(upstream_list)
+    end if
+
+  end subroutine build_upstream_graph
+
+
+    ! -----------------------------------------------------
+  ! Print inflow/outflow per element based on upstream list
+  ! -----------------------------------------------------
+  subroutine print_upstream_flows()
+    use typy
+    use globals
+    implicit none
+
+    integer(kind=ikind) :: nel, e, k
+    real(kind=rkind)    :: Qin_from_up
+
+    nel = elements%kolik
+
+    if (.not. allocated(elements%hydrobal)) then
+       print *, " No hydrological data (hydrobal not allocated)."
+       return
+    end if
+    if (.not. allocated(upstream_count)) then
+       print *, " Upstream graph not built yet (call init_flow_topology first)."
+       return
+    end if
+
+    print *, "---------------------------------------------------------------"
+    print *, " el | n_up | Qin_from_up    Qin(field)     Qout_elem"
+    print *, "---------------------------------------------------------------"
+
+    do e = 1_ikind, nel
+       Qin_from_up = 0.0_rkind
+
+       if (allocated(upstream_list)) then
+          do k = 1_ikind, upstream_count(e)
+             Qin_from_up = Qin_from_up + &
+                  elements%hydrobal( upstream_list(e,k) )%outflow
+          end do
+       end if
+
+       write(*,'(I3,1X,I4,3F14.6)') e, upstream_count(e), Qin_from_up, &
+            elements%hydrobal(e)%inflow, elements%hydrobal(e)%outflow
+    end do
+
+  end subroutine print_upstream_flows
+
 
   ! -----------------------------------------------------
   ! Optional: print element balance (for debugging)
@@ -323,7 +426,7 @@ contains
 
 
 
-     ! -----------------------------------------------------
+   ! -----------------------------------------------------
   ! Routing + local mass balance for one time step
   ! -----------------------------------------------------
   subroutine route_step(tstep)
@@ -333,7 +436,7 @@ contains
     real(kind=rkind)    :: old_storage, local_input, local_losses, surplus
     real(kind=rkind), allocatable :: overflow_total(:), storage_new(:)
 
-    ! Allocate temporary arrays for this time step
+    ! Allocate helper arrays
     allocate(overflow_total(elements%kolik))
     allocate(storage_new(elements%kolik))
 
@@ -342,14 +445,14 @@ contains
     elements%hydrobal(:)%outflow = 0.0_rkind
 
     overflow_total = 0.0_rkind
-    storage_new    = storage   ! start from previous storage
+    storage_new    = storage
 
-    ! 1) LOCAL BALANCE BEFORE ROUTING
+    ! 1) Local balance before routing (element-wise)
     do el = 1_ikind, elements%kolik
 
        old_storage = storage(el)
 
-       ! Inputs [mm]
+       ! Inputs [mm] (precip + interflow + what was already stored)
        local_input = precip(el,tstep) + qinter(el,tstep) + old_storage
 
        ! Losses [mm]
@@ -363,7 +466,7 @@ contains
        else
           surplus = local_input - local_losses
 
-          ! fill storage up to capacity
+          ! Fill storage up to capacity
           if (surplus <= capacity(el)) then
              storage_new(el) = surplus
              surplus         = 0.0_rkind
@@ -373,37 +476,40 @@ contains
           end if
        end if
 
-       ! local overflow (to be routed)
+       ! Local overflow that will be routed: ponding surplus + direct surface runoff
        overflow_total(el) = surplus + Qsurf_result(el,tstep)
+
     end do
 
-    ! 2) ROUTE FLOW ALONG DOWNSTREAM GRAPH (UPSTREAM → DOWNSTREAM)
+    ! 2) Routing along downstream graph (using flow_order: upstream -> downstream)
     do i = 1_ikind, elements%kolik
        el  = flow_order(i)
        dwn = downstream(el)
 
-       ! local outflow = inflow from upstream + own overflow
+       ! Pass-through outflow at this element
        elements%hydrobal(el)%outflow = elements%hydrobal(el)%inflow + &
                                        overflow_total(el)
 
        if (dwn > 0_ikind) then
-          ! send to downstream element
+          ! Add all this outflow to the downstream element's inflow
           elements%hydrobal(dwn)%inflow = elements%hydrobal(dwn)%inflow + &
                                           elements%hydrobal(el)%outflow
        else
-          ! outlet element → catchment outflow hydrograph
+          ! This is an outlet element → contributes to catchment outlet discharge
           outlet_Q(tstep) = outlet_Q(tstep) + elements%hydrobal(el)%outflow
        end if
     end do
 
-    ! 3) FINAL MASS BALANCE PER ELEMENT
+    ! 3) Final mass balance and state update
     do el = 1_ikind, elements%kolik
        old_storage           = storage(el)
        storage(el)           = storage_new(el)
        elements%overflow(el) = overflow_total(el)
 
-       elements%hydrobal(el)%deltas = precip(el,tstep) + qinter(el,tstep) + &
-                                      old_storage + elements%hydrobal(el)%inflow - &
+       elements%hydrobal(el)%deltas = precip(el,tstep) + &
+                                      qinter(el,tstep) + &
+                                      old_storage + &
+                                      elements%hydrobal(el)%inflow - &
                                       ( elements%hydrobal(el)%ET      + &
                                         elements%hydrobal(el)%Li      + &
                                         elements%hydrobal(el)%Qgw     + &
@@ -415,7 +521,6 @@ contains
 
     deallocate(overflow_total, storage_new)
   end subroutine route_step
-
 
 
 end module tools
