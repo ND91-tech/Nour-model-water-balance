@@ -17,7 +17,6 @@ module globals
 
   ! ---------- Hydrological balance (per element, per step) ----------
   type, public :: hydrobal_str
-     integer(kind=ikind), dimension(2) :: inflowel = 0, outflowel = 0
      real(kind=rkind) :: deltas  = 0.0_rkind
      real(kind=rkind) :: inflow  = 0.0_rkind
      real(kind=rkind) :: outflow = 0.0_rkind
@@ -56,6 +55,12 @@ module globals
                                    L_result(:,:), Qgw_result(:,:), deltas(:,:)
 
   integer, parameter :: terminal = 6
+
+
+  ! NEW: upstream connectivity
+  integer(kind=ikind), allocatable :: upstream_count(:)
+  integer(kind=ikind), allocatable :: upstream_list(:,:)
+
 
   ! ---------- Configuration structure (kept from DRUtES style) ----------
   type, public :: configuration
