@@ -72,13 +72,15 @@ program nour
   call init_hydro()   ! <-- new name
 
     
-  call print_upstream_flows()
+
 
 
   ! ----------------------------------------------------
   ! 5) Compute hydrological balance + routing
   ! ----------------------------------------------------
   call compute_all()
+
+    call print_upstream_flows()
 
   ! ----------------------------------------------------
   ! 6) Print and export results
